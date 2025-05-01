@@ -1,28 +1,54 @@
 body {
-    font-family: sans-serif;
-    text-align: center;
-    margin: 2em;
-  }
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(4, 100px);
-    gap: 10px;
-    justify-content: center;
-    margin-bottom: 1em;
-  }
-  .card {
-    border: 1px solid #aaa;
-    padding: 1em;
-    background-color: #f0f0f0;
-    cursor: pointer;
-    border-radius: 5px;
-  }
-  .card.selected {
-    background-color: #a0e0a0;
-  }
-  .card.locked {
-    background-color: #ffd700; /* 정답일 때 노란색으로 고정 */
-    pointer-events: none;      /* 클릭 안 되도록 막음 */
-    font-weight: bold;
-  }  
-  
+  font-family: sans-serif;
+  text-align: center;
+  margin: 2em;
+}
+
+.row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.category-label-left {
+  width: 60px;
+  text-align: right;
+  font-weight: bold;
+  color: #555;
+}
+
+.word-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 100px);
+  gap: 10px;
+  justify-content: center;
+}
+
+.card {
+  width: 100px;
+  height: 60px;
+  background-color: #f0f0f0;
+  border: 1px solid #aaa;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.card.selected {
+  background-color: #a0e0a0;
+}
+
+.card.locked {
+  background-color: #ffd700;
+  pointer-events: none;
+  font-weight: bold;
+}
+
+#locked-area, #board {
+  margin-top: 20px;
+}

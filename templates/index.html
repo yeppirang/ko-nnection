@@ -5,37 +5,44 @@
   <title>Ko-nnection</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-
 <body>
   <h1>Ko-nnection</h1>
-  <div id="board" class="grid">
-    {% for word in words %}
-      <div class="card" onclick="toggleSelect(this)">{{ word }}</div>
-    {% endfor %}
-  </div>
+  <button onclick="shuffleUnanswered()">셔플</button>
+  <p id="progress">0/4 정답 완료</p>
+
+  <div id="locked-area"></div>  <!-- 정답 카드들 표시 영역 -->
+  <div id="board"></div>        <!-- 남은 카드들 표시 영역 -->
+  
+
   <button onclick="submitSelection()">제출</button>
   <p id="message"></p>
 
   <script>
+    const allWords = {{ words | tojson }};
     let selected = [];
     let foundGroups = [];
-  
+    let lockedGroups = [];
+
+    window.onload = () => {
+      renderBoard();
+    };
+
     function toggleSelect(elem) {
-      if (elem.classList.contains("locked")) return; // 이미 정답이면 선택 못하게
+      if (elem.classList.contains("locked")) return;
+      const word = elem.textContent.trim();
       elem.classList.toggle("selected");
-      const word = elem.textContent;
-  
+
       if (selected.includes(word)) {
         selected = selected.filter(w => w !== word);
       } else {
         selected.push(word);
       }
-  
+
       if (selected.length === 4) {
-        submitSelection();
+        document.getElementById("message").textContent = "제출 버튼을 눌러 확인하세요!";
       }
     }
-  
+
     async function submitSelection() {
       const res = await fetch("/check", {
         method: "POST",
@@ -43,32 +50,124 @@
         body: JSON.stringify({ words: selected })
       });
       const data = await res.json();
-  
       const message = document.getElementById("message");
-  
+
       if (data.result === "정답입니다!") {
-        // 선택된 카드에 정답 색상 부여
-        document.querySelectorAll(".card").forEach(card => {
-          if (selected.includes(card.textContent)) {
-            card.classList.remove("selected");
-            card.classList.add("locked"); // 정답 고정
-          }
+        lockedGroups.push({
+          words: [...selected],
+          category: data.category,
+          color: data.color
         });
         foundGroups.push([...selected]);
+        message.textContent = `정답입니다! 🟡 카테고리: ${data.category}`;
+        selected = [];
+        renderBoard();
       } else {
         message.textContent = "틀렸습니다.";
         setTimeout(() => {
           document.querySelectorAll(".selected").forEach(card => card.classList.remove("selected"));
         }, 600);
+        selected = [];
       }
-  
-      selected = [];
-  
+
       if (foundGroups.length === 4) {
         message.textContent = "🎉 축하합니다! 모든 그룹을 맞추셨습니다!";
       }
+
+      document.getElementById("progress").textContent = `${foundGroups.length}/4 정답 완료`;
     }
+
+    function shuffleUnanswered() {
+      const usedWords = lockedGroups.flatMap(g => g.words);
+      const remaining = allWords.filter(w => !usedWords.includes(w));
+
+      // 셔플 remaining만
+      for (let i = remaining.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [remaining[i], remaining[j]] = [remaining[j], remaining[i]];
+      }
+
+      // 재배열
+      let rebuilt = [];
+      let index = 0;
+      for (let i = 0; i < 4; i++) {
+        const group = lockedGroups.find(g => g.words.every(w => allWords.slice(i * 4, i * 4 + 4).includes(w)));
+        if (group) {
+          rebuilt.push(...group.words);
+        } else {
+          rebuilt.push(...remaining.slice(index, index + 4));
+          index += 4;
+        }
+      }
+
+      allWords.splice(0, allWords.length, ...rebuilt);
+      renderBoard();
+    }
+
+    
+    function renderBoard() {
+  const lockedArea = document.getElementById("locked-area");
+  const board = document.getElementById("board");
+  lockedArea.innerHTML = "";
+  board.innerHTML = "";
+
+  // ✅ 1. 정답 카드들 위에 정렬
+  lockedGroups.forEach(group => {
+    const row = document.createElement("div");
+    row.classList.add("row");
+
+    const label = document.createElement("div");
+    label.classList.add("category-label-left");
+    label.textContent = group.category;
+    row.appendChild(label);
+
+    const cards = document.createElement("div");
+    cards.classList.add("word-cards");
+
+    group.words.forEach(word => {
+      const card = document.createElement("div");
+      card.textContent = word;
+      card.classList.add("card", "locked");
+      card.style.backgroundColor = group.color || "#ffd700";
+      cards.appendChild(card);
+    });
+
+    row.appendChild(cards);
+    lockedArea.appendChild(row);
+  });
+
+  // ✅ 2. 나머지 단어들 아래쪽 4×4
+  const usedWords = lockedGroups.flatMap(group => group.words);
+  const remainingWords = allWords.filter(word => !usedWords.includes(word));
+
+  for (let i = 0; i < remainingWords.length; i += 4) {
+    const rowWords = remainingWords.slice(i, i + 4);
+    const row = document.createElement("div");
+    row.classList.add("row");
+
+    const spacer = document.createElement("div");  // 빈 자리
+    spacer.classList.add("category-label-left");
+    row.appendChild(spacer);
+
+    const cards = document.createElement("div");
+    cards.classList.add("word-cards");
+
+    rowWords.forEach(word => {
+      const card = document.createElement("div");
+      card.textContent = word;
+      card.classList.add("card");
+      if (selected.includes(word)) card.classList.add("selected");
+      card.onclick = () => toggleSelect(card);
+      cards.appendChild(card);
+    });
+
+    row.appendChild(cards);
+    board.appendChild(row);
+  }
+
+  document.getElementById("progress").textContent = `${lockedGroups.length}/4 정답 완료`;
+}
+
   </script>
-  
 </body>
 </html>
