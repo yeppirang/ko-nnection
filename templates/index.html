@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>Ko-nnection</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+  <h1>Ko-nnection</h1>
+  <div id="board" class="grid">
+    {% for word in words %}
+      <div class="card" onclick="toggleSelect(this)">{{ word }}</div>
+    {% endfor %}
+  </div>
+  <button onclick="submitSelection()">제출</button>
+  <p id="message"></p>
+
+  <script>
+    let selected = [];
+    let foundGroups = [];
+  
+    function toggleSelect(elem) {
+      if (elem.classList.contains("locked")) return; // 이미 정답이면 선택 못하게
+      elem.classList.toggle("selected");
+      const word = elem.textContent;
+  
+      if (selected.includes(word)) {
+        selected = selected.filter(w => w !== word);
+      } else {
+        selected.push(word);
+      }
+  
+      if (selected.length === 4) {
+        submitSelection();
+      }
+    }
+  
+    async function submitSelection() {
+      const res = await fetch("/check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ words: selected })
+      });
+      const data = await res.json();
+  
+      const message = document.getElementById("message");
+  
+      if (data.result === "정답입니다!") {
+        // 선택된 카드에 정답 색상 부여
+        document.querySelectorAll(".card").forEach(card => {
+          if (selected.includes(card.textContent)) {
+            card.classList.remove("selected");
+            card.classList.add("locked"); // 정답 고정
+          }
+        });
+        foundGroups.push([...selected]);
+      } else {
+        message.textContent = "틀렸습니다.";
+        setTimeout(() => {
+          document.querySelectorAll(".selected").forEach(card => card.classList.remove("selected"));
+        }, 600);
+      }
+  
+      selected = [];
+  
+      if (foundGroups.length === 4) {
+        message.textContent = "🎉 축하합니다! 모든 그룹을 맞추셨습니다!";
+      }
+    }
+  </script>
+  
+</body>
+</html>

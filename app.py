@@ -1,12 +1,14 @@
 from flask import Flask, render_template, request, jsonify
 import json
 import os
+import random
 
 app = Flask(__name__)
 
 with open("words.json", encoding="utf-8") as f:
     data = json.load(f)
     all_words = sum(data["groups"], [])
+    random.shuffle(all_words)
 
 @app.route("/")
 def index():
