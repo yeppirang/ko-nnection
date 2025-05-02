@@ -8,7 +8,7 @@
 <body>
   <h1>Ko-nnection</h1>
   <button onclick="shuffleUnanswered()">셔플</button>
-  <p id="progress">0/4 정답 완료</p>
+<!--   <p id="progress">0/4 정답 완료</p> -->
 
   <div id="locked-area"></div>  <!-- 정답 카드들 표시 영역 -->
   <div id="board"></div>        <!-- 남은 카드들 표시 영역 -->
@@ -40,6 +40,8 @@
 
       if (selected.length === 4) {
         document.getElementById("message").textContent = "제출 버튼을 눌러 확인하세요!";
+      } else {
+        messageElem.textContent = "";
       }
     }
 
@@ -63,15 +65,21 @@
         selected = [];
         renderBoard();
       } else {
-        message.textContent = "틀렸습니다.";
+        if (foundGroups.length === 3) {
+          message.textContent = "까비~ 하나만 바꿔보세요!";
+        } else {
+          message.textContent = "틀렸습니다.";
+        }
+      
         setTimeout(() => {
           document.querySelectorAll(".selected").forEach(card => card.classList.remove("selected"));
         }, 600);
+      
         selected = [];
       }
 
       if (foundGroups.length === 4) {
-        message.textContent = "🎉 축하합니다! 모든 그룹을 맞추셨습니다!";
+        message.textContent = "🎉 축하합니다! 모든 그룹을 맞히셨습니다!";
       }
 
       document.getElementById("progress").textContent = `${foundGroups.length}/4 정답 완료`;
